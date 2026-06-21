@@ -16,6 +16,21 @@ from app.schemas.residence import (
     ResidentCreate,
     ResidentUpdate,
 )
+from app.schemas.task import (
+    RecurrenceCreate,
+    RecurrenceResponse,
+    TaskCreate,
+    TaskUpdate,
+    TaskResponse,
+    TaskExecutionCreate,
+    TaskExecutionResponse,
+    AttachmentResponse,
+)
+from app.schemas.event import (
+    EventCreate,
+    EventUpdate,
+    EventResponse,
+)
 
 __all__ = [
     "UserResponse",
@@ -31,5 +46,16 @@ __all__ = [
     "ResidentResponse",
     "ResidentCreate",
     "ResidentUpdate",
+    "RecurrenceCreate",
+    "RecurrenceResponse",
+    "TaskCreate",
+    "TaskUpdate",
+    "TaskResponse",
+    "TaskExecutionCreate",
+    "TaskExecutionResponse",
+    "AttachmentResponse",
+    "EventCreate",
+    "EventUpdate",
+    "EventResponse",
 ]
 
