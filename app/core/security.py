@@ -1,7 +1,7 @@
 import uuid
 import httpx
 import logging
-from typing import Any, Dict
+from typing import Any, cast, Dict
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +47,7 @@ async def validate_supabase_token(token: str) -> Dict[str, Any]:
                     detail="Invalid or expired authentication token",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-            return response.json()
+            return cast(Dict[str, Any], response.json())
         except httpx.HTTPError as e:
             logger.error(f"HTTP connection to Supabase Auth failed: {str(e)}")
             raise HTTPException(

@@ -1,26 +1,24 @@
 import uuid
 from datetime import date, time
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     email: str
 
-    class Config:
-        from_attributes = True
-
 
 class ProfileResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     first_name: str
     last_name: str
     nickname: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
     birth_date: Optional[date] = None
-
-    class Config:
-        from_attributes = True
 
 
 class ProfileUpdate(BaseModel):
@@ -33,14 +31,13 @@ class ProfileUpdate(BaseModel):
 
 
 class PreferencesResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     language: str
     theme: str
     push_enabled: bool
     quiet_hours_start: Optional[time] = None
     quiet_hours_end: Optional[time] = None
-
-    class Config:
-        from_attributes = True
 
 
 class PreferencesUpdate(BaseModel):

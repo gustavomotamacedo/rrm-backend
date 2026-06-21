@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from app.models.task import RecurrenceFrequency, TaskStatus
 
 class RecurrenceCreate(BaseModel):
@@ -14,6 +14,8 @@ class RecurrenceCreate(BaseModel):
 
 
 class RecurrenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     frequency: RecurrenceFrequency
     interval_value: int
@@ -21,9 +23,6 @@ class RecurrenceResponse(BaseModel):
     by_month_day: Optional[int] = None
     start_date: date
     end_date: Optional[date] = None
-
-    class Config:
-        from_attributes = True
 
 
 class TaskCreate(BaseModel):
@@ -43,17 +42,18 @@ class TaskUpdate(BaseModel):
 
 
 class AttachmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     file_name: str
     mime_type: str
     file_size: int
     storage_key: str
 
-    class Config:
-        from_attributes = True
-
 
 class TaskResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     residence_id: uuid.UUID
     title: str
@@ -65,20 +65,16 @@ class TaskResponse(BaseModel):
     recurrence: Optional[RecurrenceResponse] = None
     attachments: List[AttachmentResponse] = []
 
-    class Config:
-        from_attributes = True
-
 
 class TaskExecutionCreate(BaseModel):
     notes: Optional[str] = None
 
 
 class TaskExecutionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     task_id: uuid.UUID
     resident_id: uuid.UUID
     executed_at: datetime
     notes: Optional[str] = None
-
-    class Config:
-        from_attributes = True

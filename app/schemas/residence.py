@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from app.models.residence import FinancialSplitMethod, ResidentRole
 
 class ResidenceCreate(BaseModel):
@@ -15,22 +15,20 @@ class ResidenceUpdate(BaseModel):
 
 
 class ResidenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     timezone: str
 
-    class Config:
-        from_attributes = True
-
 
 class ResidenceSettingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     financial_split_method: FinancialSplitMethod
     guest_retention_days: int
     notifications_enabled: bool
     default_currency: str
-
-    class Config:
-        from_attributes = True
 
 
 class ResidenceSettingUpdate(BaseModel):
@@ -41,6 +39,8 @@ class ResidenceSettingUpdate(BaseModel):
 
 
 class ResidentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     residence_id: uuid.UUID
     user_id: uuid.UUID
@@ -48,9 +48,6 @@ class ResidentResponse(BaseModel):
     income_weight: float
     joined_at: datetime
     left_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class ResidentCreate(BaseModel):

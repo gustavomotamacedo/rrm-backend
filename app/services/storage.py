@@ -1,6 +1,7 @@
 import abc
 import httpx
 import logging
+from typing import cast
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -206,7 +207,7 @@ class SupabaseStorageService(BaseStorageService):
                 # If Supabase returns relative URL, join with base URL
                 if signed_url.startswith("/"):
                     signed_url = f"{self.supabase_url}{signed_url}"
-                return signed_url
+                return cast(str, signed_url)
             except httpx.HTTPError as e:
                 logger.exception("HTTP error during Supabase sign URL")
                 raise StorageError(f"HTTP transport failure: {str(e)}")

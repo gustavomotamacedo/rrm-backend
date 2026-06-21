@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.task import AttachmentResponse
 
 class MessageCreate(BaseModel):
@@ -19,16 +19,17 @@ class MessageUpdate(BaseModel):
 
 
 class MessageReadResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     message_id: uuid.UUID
     resident_id: uuid.UUID
     read_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class MessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     residence_id: uuid.UUID
     title: str
@@ -40,6 +41,3 @@ class MessageResponse(BaseModel):
     created_by: Optional[uuid.UUID] = None
     reads: List[MessageReadResponse] = []
     attachments: List[AttachmentResponse] = []
-
-    class Config:
-        from_attributes = True

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.task import RecurrenceCreate, RecurrenceResponse, AttachmentResponse
 
 class EventCreate(BaseModel):
@@ -23,6 +23,8 @@ class EventUpdate(BaseModel):
 
 
 class EventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     residence_id: uuid.UUID
     owner_resident_id: uuid.UUID
@@ -34,6 +36,3 @@ class EventResponse(BaseModel):
     generate_task: bool
     recurrence: Optional[RecurrenceResponse] = None
     attachments: List[AttachmentResponse] = []
-
-    class Config:
-        from_attributes = True
