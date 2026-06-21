@@ -1,3 +1,9 @@
 .specs
 .claude
 CLAUDE.md
+
+# Ignore variáveis de ambiente
+.env
+.env.staging
+.env.development
+.env.production
