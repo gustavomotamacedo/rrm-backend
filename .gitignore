@@ -1,3 +1,4 @@
+# Especificidades do projeto e especificações
 .specs
 .claude
 CLAUDE.md
@@ -7,9 +8,37 @@ CLAUDE.md
 .env.staging
 .env.development
 .env.production
+.env.*
 
-# Ignore arquivos sql
+# Ignore arquivos sql e patches
 *.sql
-
-# Ignore arquivos de log
 *.patch
+
+# Ambientes virtuais (Python virtualenvs)
+.venv/
+venv/
+env/
+ENV/
+dist/
+build/
+*.egg-info/
+
+# Cache do Python e arquivos compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ferramentas de qualidade e teste (pytest, ruff, mypy)
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDEs e editores de código (opcional/comum)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
