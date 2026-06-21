@@ -37,6 +37,13 @@ from app.schemas.message import (
     MessageReadResponse,
     MessageResponse,
 )
+from app.schemas.notification import (
+    NotificationResponse,
+)
+from app.schemas.dashboard import (
+    DashboardResponse,
+    ResidenceDashboardResponse,
+)
 
 __all__ = [
     "UserResponse",
@@ -67,5 +74,8 @@ __all__ = [
     "MessageUpdate",
     "MessageReadResponse",
     "MessageResponse",
+    "NotificationResponse",
+    "DashboardResponse",
+    "ResidenceDashboardResponse",
 ]
 
