@@ -31,6 +31,12 @@ from app.schemas.event import (
     EventUpdate,
     EventResponse,
 )
+from app.schemas.message import (
+    MessageCreate,
+    MessageUpdate,
+    MessageReadResponse,
+    MessageResponse,
+)
 
 __all__ = [
     "UserResponse",
@@ -57,5 +63,9 @@ __all__ = [
     "EventCreate",
     "EventUpdate",
     "EventResponse",
+    "MessageCreate",
+    "MessageUpdate",
+    "MessageReadResponse",
+    "MessageResponse",
 ]
 
