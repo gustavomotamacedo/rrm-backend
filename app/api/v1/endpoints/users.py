@@ -67,9 +67,14 @@ async def delete_user_me(
 
 
 @router.get("/profile", response_model=ProfileResponse)
-async def read_user_profile(current_user: User = Depends(get_current_user)) -> Any:
+async def read_user_profile(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """Gets the profile details of the current logged in user."""
-    profile = current_user.profile
+    stmt = select(Profile).where(Profile.user_id == current_user.id)
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -85,7 +90,9 @@ async def update_user_profile(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Updates the profile details of the current logged in user."""
-    profile = current_user.profile
+    stmt = select(Profile).where(Profile.user_id == current_user.id)
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -103,9 +110,14 @@ async def update_user_profile(
 
 
 @router.get("/preferences", response_model=PreferencesResponse)
-async def read_user_preferences(current_user: User = Depends(get_current_user)) -> Any:
+async def read_user_preferences(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """Gets the system preferences of the current logged in user."""
-    preferences = current_user.preferences
+    stmt = select(UserPreference).where(UserPreference.user_id == current_user.id)
+    result = await db.execute(stmt)
+    preferences = result.scalar_one_or_none()
     if not preferences:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -121,7 +133,9 @@ async def update_user_preferences(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Updates the system preferences of the current logged in user."""
-    preferences = current_user.preferences
+    stmt = select(UserPreference).where(UserPreference.user_id == current_user.id)
+    result = await db.execute(stmt)
+    preferences = result.scalar_one_or_none()
     if not preferences:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

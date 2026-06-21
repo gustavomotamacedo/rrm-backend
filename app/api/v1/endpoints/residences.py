@@ -5,6 +5,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from app.core.security import get_current_user, RequiresResident
 from app.db.session import get_db
@@ -84,10 +85,16 @@ async def create_residence(
 @router.get("/residences/{residence_id}", response_model=ResidenceResponse)
 async def get_residence(
     residence_id: uuid.UUID,
-    active_resident: Resident = Depends(RequiresResident())
+    active_resident: Resident = Depends(RequiresResident()),
+    db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Gets details of a specific residence. Requires active membership."""
-    return active_resident.residence
+    stmt = select(Residence).where(Residence.id == residence_id, Residence.deleted_at.is_(None))
+    result = await db.execute(stmt)
+    residence = result.scalar_one_or_none()
+    if not residence:
+        raise HTTPException(status_code=404, detail="Residence not found")
+    return residence
 
 
 @router.patch("/residences/{residence_id}", response_model=ResidenceResponse)
@@ -98,7 +105,12 @@ async def update_residence(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Updates residence name or timezone. Requires MASTER role."""
-    residence = active_resident.residence
+    stmt = select(Residence).where(Residence.id == residence_id, Residence.deleted_at.is_(None))
+    result = await db.execute(stmt)
+    residence = result.scalar_one_or_none()
+    if not residence:
+        raise HTTPException(status_code=404, detail="Residence not found")
+
     update_data = residence_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(residence, field, value)
@@ -117,7 +129,15 @@ async def delete_residence(
 ) -> None:
     """Performs soft delete on a residence and all its settings/mural posts/tasks, etc."""
     current_time = datetime.utcnow()
-    residence = active_resident.residence
+    
+    stmt = select(Residence).where(Residence.id == residence_id, Residence.deleted_at.is_(None)).options(
+        selectinload(Residence.settings),
+        selectinload(Residence.residents)
+    )
+    result = await db.execute(stmt)
+    residence = result.scalar_one_or_none()
+    if not residence:
+        raise HTTPException(status_code=404, detail="Residence not found")
     
     # Soft delete Residence
     residence.deleted_at = current_time
@@ -127,10 +147,10 @@ async def delete_residence(
         residence.settings.deleted_at = current_time
 
     # Soft delete all active Residents
-    for resident in residence.residents:
-        if not resident.left_at:
-            resident.left_at = current_time
-        resident.deleted_at = current_time
+    for r in residence.residents:
+        if not r.left_at:
+            r.left_at = current_time
+        r.deleted_at = current_time
 
     await db.commit()
     logger.info(f"Residence {residence_id} soft-deleted by master resident {active_resident.id}.")
@@ -139,10 +159,16 @@ async def delete_residence(
 @router.get("/residences/{residence_id}/settings", response_model=ResidenceSettingResponse)
 async def get_residence_settings(
     residence_id: uuid.UUID,
-    active_resident: Resident = Depends(RequiresResident())
+    active_resident: Resident = Depends(RequiresResident()),
+    db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Gets settings of a specific residence. Requires active membership."""
-    settings = active_resident.residence.settings
+    stmt = select(ResidenceSetting).where(
+        ResidenceSetting.residence_id == residence_id,
+        ResidenceSetting.deleted_at.is_(None)
+    )
+    result = await db.execute(stmt)
+    settings = result.scalar_one_or_none()
     if not settings:
         raise HTTPException(status_code=404, detail="Settings not found for this residence")
     return settings
@@ -156,7 +182,12 @@ async def update_residence_settings(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Updates settings of a residence. Requires MASTER role."""
-    settings = active_resident.residence.settings
+    stmt = select(ResidenceSetting).where(
+        ResidenceSetting.residence_id == residence_id,
+        ResidenceSetting.deleted_at.is_(None)
+    )
+    result = await db.execute(stmt)
+    settings = result.scalar_one_or_none()
     if not settings:
         raise HTTPException(status_code=404, detail="Settings not found for this residence")
 

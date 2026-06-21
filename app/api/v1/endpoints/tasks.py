@@ -372,6 +372,11 @@ async def upload_task_attachment(
         )
 
     # 1. Read file bytes and compute checksum
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file must have a filename."
+        )
     file_bytes = await file.read()
     checksum = hashlib.md5(file_bytes).hexdigest()
 

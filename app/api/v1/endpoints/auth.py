@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, date
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -26,6 +26,8 @@ class WebhookPayload(BaseModel):
 
 
 class UserProfileResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     email: str
     first_name: Optional[str] = None
@@ -36,15 +38,22 @@ class UserProfileResponse(BaseModel):
     birth_date: Optional[date] = None
     preferences: Optional[Dict[str, Any]] = None
 
-    class Config:
-        from_attributes = True
-
 
 @router.get("/me", response_model=UserProfileResponse)
-async def get_me(current_user: User = Depends(get_current_user)) -> Any:
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """Returns the profile and preferences of the currently logged-in user."""
-    profile = current_user.profile
-    preferences = current_user.preferences
+    # Fetch profile and preferences explicitly to avoid lazy loading issues
+    stmt_profile = select(Profile).where(Profile.user_id == current_user.id)
+    stmt_pref = select(UserPreference).where(UserPreference.user_id == current_user.id)
+    
+    result_profile = await db.execute(stmt_profile)
+    profile = result_profile.scalar_one_or_none()
+    
+    result_pref = await db.execute(stmt_pref)
+    preferences = result_pref.scalar_one_or_none()
 
     return {
         "id": current_user.id,
@@ -89,22 +98,28 @@ async def supabase_auth_webhook(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Webhook endpoint to synchronize Supabase Auth users with local tables."""
-    # 1. Verify Webhook Secret if configured
-    if settings.SUPABASE_WEBHOOK_SECRET:
-        auth_header = request.headers.get("Authorization")
-        secret_header = request.headers.get("X-Webhook-Secret")
-        token = None
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-        elif secret_header:
-            token = secret_header
+    # 1. Verify Webhook Secret
+    if not settings.SUPABASE_WEBHOOK_SECRET:
+        logger.error("SUPABASE_WEBHOOK_SECRET is not configured on the server.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Webhook verification is not configured on the server."
+        )
 
-        if token != settings.SUPABASE_WEBHOOK_SECRET:
-            logger.warning("Supabase webhook signature/secret verification failed.")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid webhook signature"
-            )
+    auth_header = request.headers.get("Authorization")
+    secret_header = request.headers.get("X-Webhook-Secret")
+    token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    elif secret_header:
+        token = secret_header
+
+    if token != settings.SUPABASE_WEBHOOK_SECRET:
+        logger.warning("Supabase webhook signature/secret verification failed.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid webhook signature"
+        )
 
     # 2. Parse payload manually to support Supabase DB Webhook structure
     # Supabase payload can have key 'schema' or 'schema_name' depending on configuration
