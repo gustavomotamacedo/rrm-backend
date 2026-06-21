@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
+    SUPABASE_WEBHOOK_SECRET: str | None = None
+
     
     # PROJECT
     PROJECT_NAME: str = "rrm-backend"

@@ -9,7 +9,8 @@ from alembic import context
 
 # Import settings and target metadata
 from app.core.config import settings
-from app.models.base import Base
+from app.models import Base
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -25,9 +26,21 @@ database_url = settings.DATABASE_URL
 if settings.ENV == "test" and settings.DATABASE_TEST_URL:
     database_url = settings.DATABASE_TEST_URL
 
-config.set_main_option("sqlalchemy.url", database_url)
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
+
 
 target_metadata = Base.metadata
+
+
+def include_object(object, name, type_, reflected, compare_to):
+    """Determine if a database object should be included in the migration.
+    
+    Prevents Alembic from dropping tables that are in the database but not
+    yet mapped in our SQLAlchemy models (e.g., during incremental development).
+    """
+    if type_ == "table" and reflected and compare_to is None:
+        return False
+    return True
 
 
 def run_migrations_offline() -> None:
@@ -48,6 +61,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -55,10 +69,15 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 
 async def run_async_migrations() -> None:
