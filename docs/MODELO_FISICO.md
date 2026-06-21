@@ -107,7 +107,7 @@ deleted_by UUID NULL
 | id            | uuid pk        |
 | residence_id  | uuid fk        |
 | user_id       | uuid fk unique |
-| role          | enum           |
+| role          | resident_role  |
 | income_weight | numeric(10,4)  |
 | joined_at     | timestamptz    |
 | left_at       | timestamptz    |
@@ -234,14 +234,14 @@ deleted_by UUID NULL
 
 ### categories
 
-| campo        | tipo         |
-| ------------ | ------------ |
-| id           | uuid pk      |
-| residence_id | uuid fk null |
-| is_system    | boolean      |
-| domain       | enum         |
-| name         | varchar(100) |
-| description  | text         |
+| campo        | tipo            |
+| ------------ | --------------- |
+| id           | uuid pk         |
+| residence_id | uuid fk null    |
+| is_system    | boolean         |
+| domain       | category_domain |
+| name         | varchar(100)    |
+| description  | text            |
 
 ---
 
@@ -282,6 +282,19 @@ deleted_by UUID NULL
 | to_resident_id   | uuid fk       |
 | amount           | numeric(14,2) |
 | paid_at          | timestamptz   |
+
+---
+
+### resident_balances
+
+| campo                | tipo          |
+| -------------------- | ------------- |
+| id                   | uuid pk       |
+| residence_id         | uuid fk       |
+| creditor_resident_id | uuid fk       |
+| debtor_resident_id   | uuid fk       |
+| amount               | numeric(14,2) |
+| updated_at           | timestamptz   |
 
 ---
 
@@ -331,6 +344,7 @@ deleted_by UUID NULL
 | shopping_list_id | uuid fk       |
 | name             | varchar(255)  |
 | quantity         | numeric(12,3) |
+| unit             | varchar(50)   |
 | purchased        | boolean       |
 | purchased_at     | timestamptz   |
 
@@ -340,15 +354,15 @@ deleted_by UUID NULL
 
 ### pets
 
-| campo             | tipo         |
-| ----------------- | ------------ |
-| id                | uuid pk      |
-| residence_id      | uuid fk      |
-| owner_resident_id | uuid fk      |
-| name              | varchar(100) |
-| species           | varchar(50)  |
-| breed             | varchar(100) |
-| birth_date        | date         |
+| campo                         | tipo         |
+| ----------------------------- | ------------ |
+| id                            | uuid pk      |
+| residence_id                  | uuid fk      |
+| primary_caregiver_resident_id | uuid fk null |
+| name                          | varchar(100) |
+| species                       | varchar(50)  |
+| breed                         | varchar(100) |
+| birth_date                    | date         |
 
 ---
 
@@ -356,17 +370,18 @@ deleted_by UUID NULL
 
 ### health_records
 
-| campo          | tipo         |
-| -------------- | ------------ |
-| id             | uuid pk      |
-| resident_id    | uuid fk null |
-| pet_id         | uuid fk null |
-| category_id    | uuid fk      |
-| visibility     | enum         |
-| consent_shared | boolean      |
-| title          | varchar(255) |
-| description    | text         |
-| record_date    | date         |
+| campo          | tipo               |
+| -------------- | ------------------ |
+| id             | uuid pk            |
+| resident_id    | uuid fk null       |
+| pet_id         | uuid fk null       |
+| category_id    | uuid fk            |
+| record_type    | health_record_type |
+| visibility     | visibility_type    |
+| consent_shared | boolean            |
+| title          | varchar(255)       |
+| description    | text               |
+| record_date    | date               |
 
 Constraint:
 
@@ -453,13 +468,16 @@ PK composta:
 
 ### notifications
 
-| campo   | tipo         |
-| ------- | ------------ |
-| id      | uuid pk      |
-| user_id | uuid fk      |
-| type    | varchar(100) |
-| title   | varchar(255) |
-| body    | text         |
+| campo              | tipo                 |
+| ------------------ | -------------------- |
+| id                 | uuid pk              |
+| user_id            | uuid fk              |
+| source_entity_type | varchar(100)         |
+| source_entity_id   | uuid                 |
+| type               | varchar(100)         |
+| title              | varchar(255)         |
+| body               | text                 |
+| status             | notification_status  |
 
 ---
 
@@ -481,13 +499,14 @@ PK composta:
 
 ---
 
-## AUDITORÍA
+## AUDITORIA
 
-## audit_logs
+### audit_logs
 
 | campo        | tipo                 |
 | ------------ | -------------------- |
 | id           | uuid pk              |
+| request_id   | uuid                 |
 | user_id      | uuid fk              |
 | residence_id | uuid fk null         |
 | entity_name  | varchar(100)         |
@@ -510,6 +529,47 @@ INSERT
 UPDATE
 DELETE
 RESTORE
+```
+
+---
+
+### resident_role
+
+```text
+MASTER
+RESIDENT
+```
+
+---
+
+### notification_status
+
+```text
+PENDING
+SENT
+READ
+FAILED
+```
+
+---
+
+### health_record_type
+
+```text
+ALLERGY
+MEDICATION
+CONSULTATION
+EXAM
+NOTE
+```
+
+---
+
+### visibility_type
+
+```text
+PRIVATE
+RESIDENCE
 ```
 
 ---
