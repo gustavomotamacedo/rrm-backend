@@ -1,81 +1,64 @@
-# MER — Modelo Entidade Relacionamento
+# MER (Modelo Entidade-Relacionamento)
 
-## Objetivo
+## Premissas Arquiteturais
 
-Sistema multi-tenant para gestão de residências compartilhadas, permitindo administração de moradores, tarefas, agenda, finanças, estoque, saúde, pets, comunicação e listas de desejos.
-
-A entidade central do domínio é a residência.
+* Multi-tenant por residência.
+* Um usuário só pode pertencer a uma residência.
+* Soft delete em entidades de negócio.
+* Auditoria completa.
+* Categorias globais e por residência.
+* Anexos com integridade referencial forte.
+* Recorrência compartilhada entre tarefas e eventos.
+* Financeiro pessoal e compartilhado coexistem.
+* Pets não são moradores, mas pertencem à residência.
+* Saúde pode pertencer a um morador ou a um pet.
 
 ---
 
-# Domínio de Identidade
+# Identidade
 
 ## Users
 
-Representa a identidade autenticável do sistema.
+Responsável pela autenticação.
 
-Responsabilidades:
+### Relacionamentos
 
-* Login
-* Recuperação de senha
-* Controle de acesso
-
-Relacionamentos:
-
-* 1:1 Profile
-* 1:N Residents
+* 1:1 Profiles
+* 1:1 UserPreferences
 * 1:N Notifications
+* 1:1 Residents
 
 ---
 
 ## Profiles
 
-Representa informações cadastrais.
+Dados cadastrais do usuário.
 
-Responsabilidades:
-
-* Nome
-* Apelido
-* Avatar
-* Telefone
-
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Users
 
 ---
 
-## User Preferences
+## UserPreferences
 
-Preferências individuais do usuário.
+Preferências operacionais.
 
-Responsabilidades:
-
-* Idioma
-* Tema
-* Horário silencioso
-* Configuração de push
-
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Users
 
 ---
 
-# Domínio de Residência
+# Residência
 
 ## Residences
 
-Tenant principal do sistema.
+Agregador principal do sistema.
 
-Responsabilidades:
+### Relacionamentos
 
-* Nome
-* Timezone
-* Configurações globais
-
-Relacionamentos:
-
+* 1:1 ResidenceSettings
 * 1:N Residents
 * 1:N Guests
 * 1:N Tasks
@@ -83,23 +66,18 @@ Relacionamentos:
 * 1:N Messages
 * 1:N Debits
 * 1:N Items
-* 1:N ShoppingItems
+* 1:N ShoppingLists
 * 1:N Pets
 * 1:N WishLists
+* 1:N Categories
 
 ---
 
-## Residence Settings
+## ResidenceSettings
 
-Configurações operacionais da residência.
+Configurações globais.
 
-Responsabilidades:
-
-* Método de rateio
-* Retenção de convidados
-* Configuração financeira
-
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 
@@ -107,18 +85,12 @@ Relacionamentos:
 
 ## Residents
 
-Representa um morador.
+Moradores.
 
-Responsabilidades:
+### Relacionamentos
 
-* Participação na residência
-* Permissões
-* Peso financeiro
-
-Relacionamentos:
-
-* N:1 Residences
 * N:1 Users
+* N:1 Residences
 
 ---
 
@@ -126,111 +98,119 @@ Relacionamentos:
 
 Visitantes temporários.
 
-Responsabilidades:
-
-* Controle de visitas
-* Retenção temporária
-
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
-* N:1 Residents
+* N:1 Residents (host)
 
 ---
 
-# Domínio de Tarefas
+# Operação
+
+## Recurrences
+
+Motor único de recorrência.
+
+### Relacionamentos
+
+* 1:N Tasks
+* 1:N Events
+
+---
 
 ## Tasks
 
 Tarefas domésticas.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 * N:1 Residents
 * N:1 Recurrences
+* 1:N TaskExecutions
 
 ---
 
-## Task Executions
+## TaskExecutions
 
 Histórico de execução.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Tasks
 * N:1 Residents
 
 ---
 
-# Domínio de Agenda
-
 ## Events
 
-Eventos da residência.
+Agenda.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 * N:1 Residents
 * N:1 Recurrences
+* 1:N EventGuests
 
 ---
 
-## Event Guests
+## EventGuests
 
-Participação de convidados.
+Participação de visitantes.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Events
 * N:1 Guests
 
 ---
 
-# Domínio de Comunicação
+# Comunicação
 
 ## Messages
 
-Recados e avisos.
+Recados.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
-* N:1 Residents
+* 1:N MessageReads
 
 ---
 
-## Message Reads
+## MessageReads
 
-Confirmação de leitura.
+Confirmações de leitura.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Messages
 * N:1 Residents
 
 ---
 
-# Domínio Financeiro
+# Financeiro
 
 ## Debits
 
-Despesas pessoais ou compartilhadas.
+Despesas.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 * N:1 Residents
 * N:1 Categories
+* 1:N DebitShares
+* 1:N Reimbursements
 
 ---
 
-## Debit Shares
+## DebitShares
 
 Rateios.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Debits
 * N:1 Residents
@@ -241,171 +221,214 @@ Relacionamentos:
 
 Reembolsos.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Debits
 * N:1 Residents
 
 ---
 
-# Domínio de Estoque
+# Estoque
 
 ## Items
 
-Itens controlados pela residência.
+Itens de estoque.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 * N:1 Categories
+* 1:N ItemMovements
 
 ---
 
-## Item Movements
+## ItemMovements
 
-Movimentação de estoque.
+Movimentações.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Items
 * N:1 Residents
 
 ---
 
-## Shopping Items
+## ShoppingLists
 
-Lista de compras.
+Listas de compras.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
+* 1:N ShoppingListItems
 
 ---
 
-# Domínio de Saúde
+## ShoppingListItems
 
-## Health Records
+Itens da lista.
 
-Registros médicos.
+### Relacionamentos
 
-Relacionamentos:
+* N:1 ShoppingLists
+
+---
+
+# Saúde
+
+## HealthRecords
+
+Prontuário simplificado.
+
+### Relacionamentos
 
 * N:1 Residents (opcional)
 * N:1 Pets (opcional)
 * N:1 Categories
 
-Regra:
-
-* pertence a um morador OU a um pet
-
 ---
 
-# Domínio de Pets
+# Pets
 
 ## Pets
 
 Animais da residência.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 * N:1 Residents
+* 1:N HealthRecords
 
 ---
 
-# Domínio de Desejos
+# Desejos
 
-## Wish Lists
+## WishLists
 
 Lista principal.
 
-Relacionamentos:
+### Relacionamentos
 
 * N:1 Residences
 * N:1 Residents
-
----
-
-## Wish List Items
-
-Itens desejados.
-
-Relacionamentos:
-
-* N:1 Wish Lists
-* N:1 Categories
-
----
-
-# Domínio Compartilhado
-
-## Categories
-
-Categorias reutilizáveis.
-
-Domínios:
-
-* debit
-* inventory
-* health
-* wish_list
-
-Relacionamentos:
-
-* 1:N Debits
-* 1:N Items
-* 1:N HealthRecords
 * 1:N WishListItems
 
 ---
 
+## WishListItems
+
+Itens desejados.
+
+### Relacionamentos
+
+* N:1 WishLists
+* N:1 Categories
+
+---
+
+# Catálogos
+
+## Categories
+
+Categorias compartilhadas.
+
+### Escopos
+
+* Global
+* Residência
+
+### Domínios
+
+* DEBIT
+* INVENTORY
+* HEALTH
+* WISH_LIST
+
+---
+
+# Arquivos
+
 ## Attachments
 
-Anexos genéricos.
+Arquivo físico.
 
-Relacionamentos:
+### Relacionamentos
 
-* Polimórfico
+* N:N Tasks
+* N:N Events
+* N:N Messages
+* N:N Debits
+* N:N HealthRecords
+* N:N Pets
+* N:N WishListItems
 
-Entidades suportadas:
-
-* tasks
-* events
-* messages
-* debits
-* health_records
-* pets
-
----
-
-## Recurrences
-
-Motor de recorrência.
-
-Relacionamentos:
-
-* 1:N Tasks
-* 1:N Events
+Implementados através de tabelas de ligação.
 
 ---
 
-# Domínio de Notificações
+# Notificações
 
 ## Notifications
 
-Notificações lógicas.
+Evento lógico.
 
-Relacionamentos:
+### Relacionamentos
 
+* N:1 Users
+* 1:N NotificationDeliveries
+
+---
+
+## NotificationDeliveries
+
+Entrega física.
+
+### Relacionamentos
+
+* N:1 Notifications
 * N:1 Users
 
 ---
 
-## Notification Deliveries
+# Auditoria
 
-Entregas físicas.
+## AuditLogs
 
-Relacionamentos:
+Responsável por registrar todas as alterações realizadas nas entidades do sistema.
 
-* N:1 Notifications
-* N:1 Users
+### Objetivos
+
+rastreabilidade
+conformidade LGPD
+investigação de incidentes
+histórico operacional
+suporte a auditorias futuras
+
+### Relacionamentos
+
+N:1 Users
+N:1 Residences (opcional)
+
+### Entidades auditáveis
+
+residences
+residents
+guests
+tasks
+task_executions
+events
+messages
+debits
+reimbursements
+items
+item_movements
+shopping_lists
+shopping_list_items
+pets
+health_records
+wish_lists
+wish_list_items
+categories
+attachments
+notifications

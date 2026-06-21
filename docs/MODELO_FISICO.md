@@ -1,546 +1,543 @@
-# Modelo Físico (3FN)
+# MODELO FÍSICO (3FN)
 
-## Convenções
+### Convenções
 
-### Chaves
+#### Extensões
 
-* PK: UUID v7
-* FK: UUID v7
-
-### Datas
-
-* TIMESTAMPTZ
-
-### Auditoria
-
-Todas as tabelas de domínio possuem:
-
-```text
-created_at
-updated_at
-created_by
-updated_by
-deleted_at
-deleted_by
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS citext;
 ```
 
-### Soft Delete
+#### Chaves
 
 ```text
-deleted_at IS NULL
+PK = UUID
+FK = UUID
 ```
 
-define registro ativo.
+#### Auditoria Padrão
 
----
-
-# USERS
+Aplicada em todas as entidades de negócio.
 
 ```text
-id PK
-email UNIQUE
-password_hash
-last_login_at
-created_at
-updated_at
+created_at TIMESTAMPTZ NOT NULL
+updated_at TIMESTAMPTZ NOT NULL
+
+created_by UUID NULL
+updated_by UUID NULL
+
+deleted_at TIMESTAMPTZ NULL
+deleted_by UUID NULL
 ```
 
 ---
 
-# PROFILES
+## IDENTIDADE
 
-```text
-id PK
-user_id FK UNIQUE
+### users
 
-first_name
-last_name
-nickname
-phone
-avatar_url
-birth_date
-
-created_at
-updated_at
-deleted_at
-```
+| campo         | tipo          |
+| ------------- | ------------- |
+| id            | uuid pk       |
+| email         | citext unique |
+| password_hash | text          |
+| last_login_at | timestamptz   |
 
 ---
 
-# USER_PREFERENCES
+### profiles
 
-```text
-id PK
-user_id FK UNIQUE
-
-language
-theme
-push_enabled
-quiet_hours_start
-quiet_hours_end
-```
-
----
-
-# RESIDENCES
-
-```text
-id PK
-
-name
-timezone
-
-created_by
-created_at
-updated_at
-deleted_at
-```
+| campo      | tipo           |
+| ---------- | -------------- |
+| id         | uuid pk        |
+| user_id    | uuid fk unique |
+| first_name | varchar(100)   |
+| last_name  | varchar(100)   |
+| nickname   | varchar(100)   |
+| phone      | varchar(30)    |
+| avatar_url | text           |
+| birth_date | date           |
 
 ---
 
-# RESIDENCE_SETTINGS
+### user_preferences
 
-```text
-id PK
-residence_id FK UNIQUE
-
-financial_split_method
-guest_retention_days
-notifications_enabled
-default_currency
-```
-
----
-
-# RESIDENTS
-
-```text
-id PK
-
-residence_id FK
-user_id FK
-
-role
-income_weight
-
-joined_at
-left_at
-```
+| campo             | tipo           |
+| ----------------- | -------------- |
+| id                | uuid pk        |
+| user_id           | uuid fk unique |
+| language          | varchar(10)    |
+| theme             | varchar(20)    |
+| push_enabled      | boolean        |
+| quiet_hours_start | time           |
+| quiet_hours_end   | time           |
 
 ---
 
-# GUESTS
+## RESIDÊNCIA
 
-```text
-id PK
+### residences
 
-residence_id FK
-host_resident_id FK
-
-name
-arrival_date
-departure_date
-notes
-expires_at
-```
+| campo    | tipo         |
+| -------- | ------------ |
+| id       | uuid pk      |
+| name     | varchar(200) |
+| timezone | varchar(100) |
 
 ---
 
-# RECURRENCES
+### residence_settings
 
-```text
-id PK
-
-frequency
-interval_value
-
-by_week_day
-by_month_day
-
-start_date
-end_date
-```
+| campo                  | tipo           |
+| ---------------------- | -------------- |
+| id                     | uuid pk        |
+| residence_id           | uuid fk unique |
+| financial_split_method | enum           |
+| guest_retention_days   | integer        |
+| notifications_enabled  | boolean        |
+| default_currency       | varchar(10)    |
 
 ---
 
-# TASKS
+### residents
 
-```text
-id PK
-
-residence_id FK
-assigned_resident_id FK
-recurrence_id FK
-
-title
-description
-
-status
-due_at
-completed_at
-```
+| campo         | tipo           |
+| ------------- | -------------- |
+| id            | uuid pk        |
+| residence_id  | uuid fk        |
+| user_id       | uuid fk unique |
+| role          | enum           |
+| income_weight | numeric(10,4)  |
+| joined_at     | timestamptz    |
+| left_at       | timestamptz    |
 
 ---
 
-# TASK_EXECUTIONS
+### guests
 
-```text
-id PK
-
-task_id FK
-resident_id FK
-
-executed_at
-notes
-```
-
----
-
-# EVENTS
-
-```text
-id PK
-
-residence_id FK
-owner_resident_id FK
-recurrence_id FK
-
-title
-description
-
-start_at
-end_at
-
-generate_task
-```
+| campo            | tipo         |
+| ---------------- | ------------ |
+| id               | uuid pk      |
+| residence_id     | uuid fk      |
+| host_resident_id | uuid fk      |
+| name             | varchar(200) |
+| arrival_date     | date         |
+| departure_date   | date         |
+| notes            | text         |
+| expires_at       | timestamptz  |
 
 ---
 
-# EVENT_GUESTS
+## RECORRÊNCIA
 
-```text
-id PK
+### recurrences
 
-event_id FK
-guest_id FK
-
-attendance_status
-```
-
----
-
-# MESSAGES
-
-```text
-id PK
-
-residence_id FK
-created_by_resident_id FK
-
-title
-body
-
-pinned
-expires_at
-```
+| campo          | tipo        |
+| -------------- | ----------- |
+| id             | uuid pk     |
+| frequency      | enum        |
+| interval_value | integer     |
+| by_week_day    | varchar(50) |
+| by_month_day   | integer     |
+| start_date     | date        |
+| end_date       | date        |
 
 ---
 
-# MESSAGE_READS
+## TAREFAS
 
-```text
-id PK
+### tasks
 
-message_id FK
-resident_id FK
-
-read_at
-```
-
----
-
-# CATEGORIES
-
-```text
-id PK
-
-residence_id FK
-
-domain
-
-name
-description
-```
+| campo                | tipo         |
+| -------------------- | ------------ |
+| id                   | uuid pk      |
+| residence_id         | uuid fk      |
+| assigned_resident_id | uuid fk      |
+| recurrence_id        | uuid fk null |
+| title                | varchar(255) |
+| description          | text         |
+| status               | enum         |
+| due_at               | timestamptz  |
+| completed_at         | timestamptz  |
 
 ---
 
-# DEBITS
+### task_executions
 
-```text
-id PK
-
-residence_id FK
-payer_resident_id FK
-
-category_id FK
-
-visibility
-
-amount
-description
-
-due_date
-paid_at
-```
+| campo       | tipo        |
+| ----------- | ----------- |
+| id          | uuid pk     |
+| task_id     | uuid fk     |
+| resident_id | uuid fk     |
+| executed_at | timestamptz |
+| notes       | text        |
 
 ---
 
-# DEBIT_SHARES
+## AGENDA
 
-```text
-id PK
+### events
 
-debit_id FK
-resident_id FK
-
-amount
-```
-
----
-
-# REIMBURSEMENTS
-
-```text
-id PK
-
-debit_id FK
-
-from_resident_id FK
-to_resident_id FK
-
-amount
-
-paid_at
-```
+| campo             | tipo         |
+| ----------------- | ------------ |
+| id                | uuid pk      |
+| residence_id      | uuid fk      |
+| owner_resident_id | uuid fk      |
+| recurrence_id     | uuid fk null |
+| title             | varchar(255) |
+| description       | text         |
+| start_at          | timestamptz  |
+| end_at            | timestamptz  |
+| generate_task     | boolean      |
 
 ---
 
-# ITEMS
+### event_guests
 
-```text
-id PK
-
-residence_id FK
-category_id FK
-
-name
-
-quantity
-minimum_quantity
-
-unit
-```
+| campo             | tipo    |
+| ----------------- | ------- |
+| id                | uuid pk |
+| event_id          | uuid fk |
+| guest_id          | uuid fk |
+| attendance_status | enum    |
 
 ---
 
-# ITEM_MOVEMENTS
+## COMUNICAÇÃO
 
-```text
-id PK
+### messages
 
-item_id FK
-resident_id FK
-
-movement_type
-quantity
-
-created_at
-```
-
----
-
-# SHOPPING_ITEMS
-
-```text
-id PK
-
-residence_id FK
-
-name
-quantity
-
-purchased
-purchased_at
-```
+| campo        | tipo         |
+| ------------ | ------------ |
+| id           | uuid pk      |
+| residence_id | uuid fk      |
+| title        | varchar(255) |
+| body         | text         |
+| pinned       | boolean      |
+| expires_at   | timestamptz  |
 
 ---
 
-# PETS
+### message_reads
 
-```text
-id PK
-
-residence_id FK
-owner_resident_id FK
-
-name
-species
-breed
-birth_date
-```
+| campo       | tipo        |
+| ----------- | ----------- |
+| id          | uuid pk     |
+| message_id  | uuid fk     |
+| resident_id | uuid fk     |
+| read_at     | timestamptz |
 
 ---
 
-# HEALTH_RECORDS
+## FINANCEIRO
 
-```text
-id PK
+### categories
 
-resident_id FK NULL
-pet_id FK NULL
+| campo        | tipo         |
+| ------------ | ------------ |
+| id           | uuid pk      |
+| residence_id | uuid fk null |
+| is_system    | boolean      |
+| domain       | enum         |
+| name         | varchar(100) |
+| description  | text         |
 
-category_id FK
+---
 
-visibility
-consent_shared
+### debits
 
-title
-description
+| campo             | tipo          |
+| ----------------- | ------------- |
+| id                | uuid pk       |
+| residence_id      | uuid fk       |
+| payer_resident_id | uuid fk       |
+| category_id       | uuid fk       |
+| visibility        | enum          |
+| amount            | numeric(14,2) |
+| description       | text          |
+| due_date          | date          |
+| paid_at           | timestamptz   |
 
-record_date
-```
+---
+
+### debit_shares
+
+| campo       | tipo          |
+| ----------- | ------------- |
+| id          | uuid pk       |
+| debit_id    | uuid fk       |
+| resident_id | uuid fk       |
+| amount      | numeric(14,2) |
+
+---
+
+### reimbursements
+
+| campo            | tipo          |
+| ---------------- | ------------- |
+| id               | uuid pk       |
+| debit_id         | uuid fk       |
+| from_resident_id | uuid fk       |
+| to_resident_id   | uuid fk       |
+| amount           | numeric(14,2) |
+| paid_at          | timestamptz   |
+
+---
+
+## ESTOQUE
+
+### items
+
+| campo            | tipo          |
+| ---------------- | ------------- |
+| id               | uuid pk       |
+| residence_id     | uuid fk       |
+| category_id      | uuid fk       |
+| name             | varchar(255)  |
+| quantity         | numeric(12,3) |
+| minimum_quantity | numeric(12,3) |
+| unit             | varchar(20)   |
+
+---
+
+### item_movements
+
+| campo         | tipo          |
+| ------------- | ------------- |
+| id            | uuid pk       |
+| item_id       | uuid fk       |
+| resident_id   | uuid fk       |
+| movement_type | enum          |
+| quantity      | numeric(12,3) |
+
+---
+
+### shopping_lists
+
+| campo        | tipo         |
+| ------------ | ------------ |
+| id           | uuid pk      |
+| residence_id | uuid fk      |
+| title        | varchar(255) |
+
+---
+
+### shopping_list_items
+
+| campo            | tipo          |
+| ---------------- | ------------- |
+| id               | uuid pk       |
+| shopping_list_id | uuid fk       |
+| name             | varchar(255)  |
+| quantity         | numeric(12,3) |
+| purchased        | boolean       |
+| purchased_at     | timestamptz   |
+
+---
+
+## PETS
+
+### pets
+
+| campo             | tipo         |
+| ----------------- | ------------ |
+| id                | uuid pk      |
+| residence_id      | uuid fk      |
+| owner_resident_id | uuid fk      |
+| name              | varchar(100) |
+| species           | varchar(50)  |
+| breed             | varchar(100) |
+| birth_date        | date         |
+
+---
+
+## SAÚDE
+
+### health_records
+
+| campo          | tipo         |
+| -------------- | ------------ |
+| id             | uuid pk      |
+| resident_id    | uuid fk null |
+| pet_id         | uuid fk null |
+| category_id    | uuid fk      |
+| visibility     | enum         |
+| consent_shared | boolean      |
+| title          | varchar(255) |
+| description    | text         |
+| record_date    | date         |
 
 Constraint:
 
-```text
-resident_id XOR pet_id
+```sql
+CHECK (
+  (resident_id IS NOT NULL AND pet_id IS NULL)
+  OR
+  (resident_id IS NULL AND pet_id IS NOT NULL)
+)
 ```
 
 ---
 
-# WISH_LISTS
+## DESEJOS
+
+### wish_lists
+
+| campo             | tipo         |
+| ----------------- | ------------ |
+| id                | uuid pk      |
+| residence_id      | uuid fk      |
+| owner_resident_id | uuid fk      |
+| title             | varchar(255) |
+
+---
+
+### wish_list_items
+
+| campo                   | tipo         |
+| ----------------------- | ------------ |
+| id                      | uuid pk      |
+| wish_list_id            | uuid fk      |
+| category_id             | uuid fk      |
+| title                   | varchar(255) |
+| description             | text         |
+| priority                | integer      |
+| reserved_by_resident_id | uuid fk null |
+
+---
+
+## ANEXOS
+
+### attachments
+
+| campo            | tipo         |
+| ---------------- | ------------ |
+| id               | uuid pk      |
+| storage_provider | varchar(50)  |
+| storage_bucket   | varchar(255) |
+| storage_key      | text         |
+| file_name        | varchar(255) |
+| mime_type        | varchar(255) |
+| file_size        | bigint       |
+| checksum         | varchar(255) |
+
+---
+
+### tabelas de ligação
+
+* task_attachments
+* event_attachments
+* message_attachments
+* debit_attachments
+* health_record_attachments
+* pet_attachments
+* wish_list_item_attachments
+
+Estrutura padrão:
+
+| campo         | tipo    |
+| ------------- | ------- |
+| attachment_id | uuid fk |
+| entity_id     | uuid fk |
+
+PK composta:
 
 ```text
-id PK
-
-residence_id FK
-owner_resident_id FK
-
-title
+(entity_id, attachment_id)
 ```
 
 ---
 
-# WISH_LIST_ITEMS
+## NOTIFICAÇÕES
+
+### notifications
+
+| campo   | tipo         |
+| ------- | ------------ |
+| id      | uuid pk      |
+| user_id | uuid fk      |
+| type    | varchar(100) |
+| title   | varchar(255) |
+| body    | text         |
+
+---
+
+### notification_deliveries
+
+| campo           | tipo        |
+| --------------- | ----------- |
+| id              | uuid pk     |
+| notification_id | uuid fk     |
+| user_id         | uuid fk     |
+| channel         | enum        |
+| sent_at         | timestamptz |
+| delivered_at    | timestamptz |
+| read_at         | timestamptz |
+| failed_at       | timestamptz |
+
+---
+
+
+---
+
+## AUDITORÍA
+
+## audit_logs
+
+| campo        | tipo                 |
+| ------------ | -------------------- |
+| id           | uuid pk              |
+| user_id      | uuid fk              |
+| residence_id | uuid fk null         |
+| entity_name  | varchar(100)         |
+| entity_id    | uuid                 |
+| operation    | audit_operation_enum |
+| old_data     | jsonb                |
+| new_data     | jsonb                |
+| ip_address   | inet                 |
+| user_agent   | text                 |
+| created_at   | timestamptz          |
+
+---
+
+## Enum
+
+### audit_operation_enum
 
 ```text
-id PK
-
-wish_list_id FK
-category_id FK
-
-title
-description
-
-priority
-
-reserved
-reserved_by_resident_id FK NULL
+INSERT
+UPDATE
+DELETE
+RESTORE
 ```
 
 ---
 
-# ATTACHMENTS
+## Índices
 
-```text
-id PK
+```sql
+(entity_name, entity_id)
+```
 
-entity_type
-entity_id
+```sql
+(user_id, created_at)
+```
 
-file_name
-file_path
-
-mime_type
-file_size
-
-uploaded_by
+```sql
+(residence_id, created_at)
 ```
 
 ---
 
-# NOTIFICATIONS
+## Normalização
 
-```text
-id PK
-
-user_id FK
-
-type
-title
-body
-
-read_at
-```
-
----
-
-# NOTIFICATION_DELIVERIES
-
-```text
-id PK
-
-notification_id FK
-user_id FK
-
-channel
-
-sent_at
-delivered_at
-read_at
-failed_at
-```
-
----
-
-# Índices Obrigatórios
-
-```sql
-users(email)
-```
-
-```sql
-residents(residence_id, user_id)
-```
-
-```sql
-tasks(residence_id, status)
-```
-
-```sql
-events(residence_id, start_at)
-```
-
-```sql
-debits(residence_id, due_date)
-```
-
-```sql
-items(residence_id, category_id)
-```
-
-```sql
-health_records(resident_id)
-```
-
-```sql
-health_records(pet_id)
-```
-
-```sql
-notifications(user_id, read_at)
-```
-
-```sql
-attachments(entity_type, entity_id)
-```
+* 1FN: atributos atômicos.
+* 2FN: sem dependências parciais.
+* 3FN: sem dependências transitivas.
+* Categorias isoladas.
+* Recorrência isolada.
+* Configurações isoladas.
+* Preferências isoladas.
+* Anexos isolados.
+* Notificações isoladas.
