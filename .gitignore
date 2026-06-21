@@ -42,3 +42,7 @@ __pycache__/
 *.njsproj
 *.sln
 *.swp
+
+# Ignora arquivos de cache
+
+.*_cache
