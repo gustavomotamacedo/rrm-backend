@@ -7,3 +7,9 @@ CLAUDE.md
 .env.staging
 .env.development
 .env.production
+
+# Ignore arquivos sql
+*.sql
+
+# Ignore arquivos de log
+*.patch
